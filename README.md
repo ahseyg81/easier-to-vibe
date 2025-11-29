@@ -4,7 +4,7 @@
 
 **easier-to-vibe** is a frictionless, browser-based code playground. It instantly turns multi-file AI code snippets into running applications. No setup, no terminal mess—just pure coding vibe.
 
-## 🚀 Why We Built This
+## Why We Built This
 
 When you ask an AI for code, you often get a massive block containing `main.py`, `utils.py`, and `styles.css`. Manually creating these files is the ultimate flow killer.
 
@@ -14,15 +14,15 @@ When you ask an AI for code, you often get a massive block containing `main.py`,
 * We auto-parse it into a virtual file system.
 * Run Python, C/C++, or Web projects instantly in your browser.
 
-## ✨ Cool Features
+## Cool Features
 
-* **⚡ Smart Parsing:** Recognizes the `//--- filename.ext ---` syntax (the same one your AI assistant uses!) and splits files automatically.
-* **🐍 Polyglot Power:** Renders HTML/CSS/JS in a live preview. Runs Python and C/C++ using the Piston API.
-* **🪄 magic-inputs™:** Automatically detects `input()` or `// input("Label")` and generates friendly UI input boxes. Say goodbye to raw console interaction!
-* **📦 Quick Export:** Download your entire project as a `.zip` file with one click.
-* **🌙 Dark Mode by Default:** Because bugs fear the dark.
+* ** Smart Parsing:** Recognizes the `//--- filename.ext ---` syntax (the same one your AI assistant uses!) and splits files automatically.
+* ** Polyglot Power:** Renders HTML/CSS/JS in a live preview. Runs Python and C/C++ using the Piston API.
+* ** magic-inputs™:** Automatically detects `input()` or `// input("Label")` and generates friendly UI input boxes. Say goodbye to raw console interaction!
+* ** Quick Export:** Download your entire project as a `.zip` file with one click.
+* ** Dark Mode by Default:** Because bugs fear the dark.
 
-## 🛠️ How to Vibe
+##  How to Vibe
 
 1.  Open the **Live Editor**.
 2.  Paste your multi-file code block.
