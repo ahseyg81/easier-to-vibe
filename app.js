@@ -17,18 +17,18 @@
             let finalStdin = rawStdinVal;
             const dynamicContainer = document.getElementById('dynamicInputs');
 
-            // --- GİRİŞ KONTROLÜ (GÜVENLİK) ---
-            // Eğer dinamik inputlar aktifse ve boşsa çalıştırma
+            // --- INPUT VALIDATION (SECURITY) ---
+            // If dynamic inputs are active and empty, don't run
             if (dynamicContainer.style.display !== 'none' && this.inputValues.length > 0) {
                 const hasEmptyInputs = this.inputValues.some(val => val.trim() === "");
 
                 if (hasEmptyInputs) {
-                    this.showToast("Girdiler eksik! Lütfen doldurun.", "warning");
+                    this.showToast("Inputs missing! Please fill them.", "warning");
 
-                    // Paneli aç
+                    // Open panel
                     this.elements.stdinWrapper.classList.remove('collapsed');
 
-                    // Hatalı inputları salla
+                    // Shake invalid inputs
                     const inputs = dynamicContainer.querySelectorAll('input');
                     inputs.forEach(input => {
                         if (!input.value.trim()) {
@@ -36,13 +36,13 @@
                             setTimeout(() => input.classList.remove('error'), 300);
                         }
                     });
-                    return; // ÇALIŞTIRMAYI DURDUR
+                    return; // STOP EXECUTION
                 }
                 finalStdin = this.inputValues.join('\n');
             }
             // ------------------------------------
 
-            terminal.innerHTML = '<div class="terminal-info">Sunucuya bağlanılıyor...</div>';
+            terminal.innerHTML = '<div class="terminal-info">Connecting to server...</div>';
 
             let language = 'python';
             let fileName = 'main.py';
@@ -71,12 +71,12 @@
 
                 if (data.run && data.run.stdout) terminal.innerHTML += `<div class="terminal-line">${this.escapeHtml(data.run.stdout)}</div>`;
                 if (data.run && data.run.stderr) terminal.innerHTML += `<div class="terminal-line terminal-error">${this.escapeHtml(data.run.stderr)}</div>`;
-                if (!data.run) terminal.innerHTML += `<div class="terminal-line terminal-error">API Hatası</div>`;
+                if (!data.run) terminal.innerHTML += `<div class="terminal-line terminal-error">API Error</div>`;
 
-                terminal.innerHTML += `<div class="terminal-info" style="margin-top:10px;">--- İşlem tamamlandı ---</div>`;
+                terminal.innerHTML += `<div class="terminal-info" style="margin-top:10px;">--- Process completed ---</div>`;
 
             } catch (error) {
-                terminal.innerHTML = `<div class="terminal-line terminal-error">Bağlantı Hatası: ${error.message}</div>`;
+                terminal.innerHTML = `<div class="terminal-line terminal-error">Connection Error: ${error.message}</div>`;
             }
         },
 
@@ -125,20 +125,20 @@
             this.elements.splitter.addEventListener('mousedown', (e) => this.initSplitterDrag(e));
 
             this.elements.manualToggle.addEventListener('click', (e) => {
-                e.stopPropagation(); // Header click'i engelle
+                e.stopPropagation(); // Prevent header click
                 const isRawVisible = this.elements.rawStdin.classList.contains('visible');
                 if (isRawVisible) {
                     this.elements.rawStdin.classList.remove('visible');
                     this.elements.dynamicInputs.style.display = 'flex';
-                    this.elements.manualToggle.textContent = 'Manuel Düzenle';
+                    this.elements.manualToggle.textContent = 'Manual Edit';
                 } else {
                     this.elements.rawStdin.classList.add('visible');
                     this.elements.dynamicInputs.style.display = 'none';
-                    this.elements.manualToggle.textContent = 'Akıllı Mod';
+                    this.elements.manualToggle.textContent = 'Smart Mode';
                 }
             });
 
-            // --- PANEL KOZMETİK İŞLEMLERİ ---
+            // --- PANEL COSMETIC OPERATIONS ---
             this.elements.stdinHeader.addEventListener('click', () => {
                 this.elements.stdinWrapper.classList.toggle('collapsed');
             });
@@ -149,7 +149,7 @@
                 e.stopPropagation();
                 const startY = e.clientY;
                 const startHeight = this.elements.stdinWrapper.offsetHeight;
-                this.elements.stdinWrapper.classList.add('dragging'); // Animasyonu kapat
+                this.elements.stdinWrapper.classList.add('dragging'); // Disable animation
 
                 const onMouseMove = (ev) => {
                     const newHeight = startHeight - (ev.clientY - startY);
@@ -180,22 +180,22 @@
             let count = 0;
             const matches = [];
 
-            // Sadece ilgili dile göre regex kullan
+            // Use regex based on detected language only
             if (this.detectedLang === 'c' || this.detectedLang === 'cpp') {
-                // C/C++ için sadece magic comment kullan: // input("Label")
+                // For C/C++ use magic comment only: // input("Label")
                 const cMagicRegex = /\/\/\s*input\s*\(\s*["']([^"']+)["']\s*\)/g;
                 while ((match = cMagicRegex.exec(code)) !== null) {
                     matches.push({ label: match[1], index: match.index });
                 }
             } else {
-                // Python için normal input() kullan
+                // For Python use normal input()
                 const pyRegex = /input\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
                 while ((match = pyRegex.exec(code)) !== null) {
                     matches.push({ label: match[1], index: match.index });
                 }
             }
 
-            // Sıralı olması için index'e göre diz (kod akışına göre)
+            // Sort by index (by code flow)
             matches.sort((a, b) => a.index - b.index);
 
             matches.forEach((m) => {
@@ -205,7 +205,7 @@
 
                 const label = document.createElement('label');
                 label.textContent = m.label;
-                // C magic comment ise yanına küçük bir işaret koy
+                // If C magic comment add a small marker
                 if (this.detectedLang === 'c' || this.detectedLang === 'cpp') {
                     const badge = document.createElement('span');
                     badge.style.fontSize = '10px';
@@ -218,7 +218,7 @@
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.dataset.index = count - 1;
-                input.placeholder = 'Değer girin...';
+                input.placeholder = 'Enter value...';
 
                 input.addEventListener('input', (e) => {
                     this.inputValues[e.target.dataset.index] = e.target.value;
@@ -232,12 +232,12 @@
             });
 
             if (count === 0) {
-                let msg = 'Kodda input() algılanmadı.';
+                let msg = 'No input() detected in code.';
                 if (this.detectedLang === 'c' || this.detectedLang === 'cpp') {
-                    msg += ' <br><small>İpucu: <code>// input("Label")</code> kullanın.</small>';
+                    msg += ' <br><small>Tip: Use <code>// input("Label")</code>.</small>';
                 }
                 container.innerHTML = `<div class="empty-inputs-msg">${msg}</div>`;
-                // Input yoksa paneli kapat
+                // Close panel if no inputs
                 this.elements.stdinWrapper.classList.add('collapsed');
             } else {
                 this.elements.stdinWrapper.classList.remove('collapsed');
@@ -288,12 +288,12 @@
             this.projectFiles = state.files;
             this.elements.projectInput.value = state.input;
 
-            // Dosya varsa normal güncelle
+            // Update normally if files exist
             if (Object.keys(this.projectFiles).length > 0) {
                 this.updateUI();
                 this.updatePreview();
             } else {
-                // Dosya yoksa temiz slate - clearEditor gibi davran
+                // If no files, clean slate - behave like clearEditor
                 this.updateUI();
                 this.switchTab('web');
                 this.elements.webFrame.srcdoc = '';
@@ -305,11 +305,11 @@
             }
 
             this.elements.undoBtn.disabled = this.undoStack.length === 0;
-            this.showToast('Geri alındı!', 'info');
+            this.showToast('Undone!', 'info');
         },
 
         parseProject() {
-            // Mevcut durumu kaydet (değişiklik yapmadan önce!)
+            // Save current state (before making changes!)
             this.saveToUndoStack();
 
             const raw = this.elements.projectInput.value;
@@ -322,10 +322,10 @@
                 else if (currentFile !== null) currentContent.push(line);
             }
             if (currentFile) parsedFiles[currentFile] = currentContent.join('\n').trim();
-            if (Object.keys(parsedFiles).length === 0 && raw.trim()) { this.projectFiles = {}; this.showToast("Format yok!", "error"); }
+            if (Object.keys(parsedFiles).length === 0 && raw.trim()) { this.projectFiles = {}; this.showToast("No format!", "error"); }
             else {
                 this.projectFiles = parsedFiles;
-                this.showToast(`${Object.keys(parsedFiles).length} dosya!`, "success");
+                this.showToast(`${Object.keys(parsedFiles).length} files!`, "success");
                 const activeCode = parsedFiles['main.py'] || parsedFiles['main.c'] || parsedFiles['main.cpp'] || '';
                 this.generateInputFields(activeCode);
             }
@@ -341,10 +341,10 @@
                 const totalSize = paths.reduce((acc, path) => acc + new Blob([this.projectFiles[path]]).size, 0);
                 this.elements.fileCount.textContent = count; this.elements.totalSize.textContent = (totalSize / 1024).toFixed(1); this.elements.fileBadge.textContent = count;
                 this.elements.fileListContainer.innerHTML = `<div class="file-tree">${this.renderFileTree(this.buildFileTree())}</div>`;
-            } else this.elements.fileListContainer.innerHTML = `<div class="empty-state"><p><strong>Dosya yok</strong></p></div>`;
+            } else this.elements.fileListContainer.innerHTML = `<div class="empty-state"><p><strong>No files</strong></p></div>`;
         },
 
-        updateEditorStats() { const text = this.elements.projectInput.value; this.elements.editorStats.textContent = `${text.split('\n').length} satır • ${text.length} krk`; this.elements.temizleBtn.disabled = text.length === 0; this.elements.undoBtn.disabled = this.undoStack.length === 0; },
+        updateEditorStats() { const text = this.elements.projectInput.value; this.elements.editorStats.textContent = `${text.split('\n').length} lines • ${text.length} chars`; this.elements.temizleBtn.disabled = text.length === 0; this.elements.undoBtn.disabled = this.undoStack.length === 0; },
         buildFileTree() { const tree = {}; Object.keys(this.projectFiles).forEach(path => { const parts = path.split('/').filter(Boolean); let currentLevel = tree; parts.forEach((part, index) => { if (index === parts.length - 1) currentLevel[part] = { __isFile: true, size: new Blob([this.projectFiles[path]]).size }; else { if (!currentLevel[part]) currentLevel[part] = { __isFolder: true, children: {} }; currentLevel = currentLevel[part].children; } }); }); return tree; },
         renderFileTree(node) { if (!node || Object.keys(node).length === 0) return ''; const sortedKeys = Object.keys(node).sort((a, b) => { const aIsFolder = node[a].__isFolder, bIsFolder = node[b].__isFolder; if (aIsFolder && !bIsFolder) return -1; if (!aIsFolder && bIsFolder) return 1; return a.localeCompare(b); }); let html = '<ul>'; sortedKeys.forEach(key => { const item = node[key]; if (item.__isFolder) html += `<li class="folder"><div class="file-details"><span class="file-name">${key}</span></div>${this.renderFileTree(item.children)}</li>`; else if (item.__isFile) html += `<li class="file"><div class="file-details"><span class="file-name">${key}</span><span class="file-size">${(item.size / 1024).toFixed(2)} KB</span></div></li>`; }); return html + '</ul>'; },
 
@@ -355,7 +355,7 @@
             const hasMainCpp = this.projectFiles["main.cpp"];
             const hasAnyFile = Object.keys(this.projectFiles).length > 0;
 
-            // ÖNEMLİ: Hiç dosya yoksa direkt empty state göster
+            // IMPORTANT: If no files, show empty state directly
             if (!hasAnyFile) {
                 this.elements.webFrame.srcdoc = "";
                 this.elements.webFrame.classList.remove('active');
@@ -366,7 +366,7 @@
                 return;
             }
 
-            // HTML dosyası bulma: Önce index.html, yoksa herhangi bir .html
+            // Find HTML file: First index.html, otherwise any .html
             let htmlFileName = null;
             if (hasIndexHtml) {
                 htmlFileName = "index.html";
@@ -378,7 +378,7 @@
             }
 
             if (htmlFileName) {
-                if (isRefresh) this.showToast("Önizleme yenilendi", "info");
+                if (isRefresh) this.showToast("Preview refreshed", "info");
                 let htmlContent = this.projectFiles[htmlFileName];
                 const cssFiles = Object.keys(this.projectFiles).filter(f => f.endsWith('.css'));
                 let inlineCss = cssFiles.map(cssFile => this.projectFiles[cssFile]).join('\n');
@@ -412,11 +412,11 @@
             this.elements.refreshBtn.disabled = !htmlFileName;
         },
 
-        openDownloadModal() { if (Object.keys(this.projectFiles).length === 0) return; this.elements.projectNameInput.value = 'proje'; this.toggleModal('download', true); setTimeout(() => this.elements.projectNameInput.select(), 100); },
-        async downloadZip() { const projectName = this.elements.projectNameInput.value.trim() || 'proje'; const fileName = projectName.endsWith('.zip') ? projectName : `${projectName}.zip`; this.toggleModal('download', false); if (Object.keys(this.projectFiles).length === 0) return; const zip = new JSZip(); for (const [filename, content] of Object.entries(this.projectFiles)) zip.file(filename, content); const blob = await zip.generateAsync({ type: "blob" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); this.showToast(`${fileName} indirildi!`, 'success'); },
+        openDownloadModal() { if (Object.keys(this.projectFiles).length === 0) return; this.elements.projectNameInput.value = 'project'; this.toggleModal('download', true); setTimeout(() => this.elements.projectNameInput.select(), 100); },
+        async downloadZip() { const projectName = this.elements.projectNameInput.value.trim() || 'project'; const fileName = projectName.endsWith('.zip') ? projectName : `${projectName}.zip`; this.toggleModal('download', false); if (Object.keys(this.projectFiles).length === 0) return; const zip = new JSZip(); for (const [filename, content] of Object.entries(this.projectFiles)) zip.file(filename, content); const blob = await zip.generateAsync({ type: "blob" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); this.showToast(`${fileName} downloaded!`, 'success'); },
         toggleFullscreen() { if (!document.fullscreenElement) this.elements.previewContainer.requestFullscreen(); else document.exitFullscreen(); },
         toggleModal(type, show) { const modal = type === 'help' ? this.elements.helpModal : this.elements.downloadModal; modal.style.display = show ? 'flex' : 'none'; },
-        copyHelpText() { const commandText = document.querySelector('#ai-command-wrapper pre code').textContent; if (commandText) navigator.clipboard.writeText(commandText).then(() => this.showToast('Kopyalandı!', 'success')).catch(() => this.showToast('Hata!', 'error')); },
+        copyHelpText() { const commandText = document.querySelector('#ai-command-wrapper pre code').textContent; if (commandText) navigator.clipboard.writeText(commandText).then(() => this.showToast('Copied!', 'success')).catch(() => this.showToast('Error!', 'error')); },
         clearEditor() {
             if (!this.elements.projectInput.value.trim()) return;
             this.saveToUndoStack();
@@ -424,24 +424,24 @@
             this.projectFiles = {};
             this.detectedLang = null;
 
-            // Sağ paneli varsayılan 'Web' sekmesine zorla
+            // Force right panel to default 'Web' tab
             this.switchTab('web');
 
-            // Önizleme ve terminali gizle, sadece 'Önizleme Yok' göster
+            // Hide preview and terminal, only show 'No Preview'
             this.elements.webFrame.srcdoc = '';
             this.elements.webFrame.classList.remove('active');
             this.elements.terminalContainer.classList.remove('active');
             this.elements.emptyView.style.display = 'flex';
 
-            // UI elemanlarını boş duruma göre güncelle
+            // Update UI elements to empty state
             this.elements.refreshBtn.disabled = true;
             this.elements.runCodeBtn.style.display = 'none';
 
             this.updateUI();
-            this.showToast('Temizlendi.', 'info');
+            this.showToast('Cleared.', 'info');
         },
-        loadNextExample() { this.saveToUndoStack(); const examples = ['examplePy', 'exampleC', 'exampleWeb']; const types = ['Python', 'C', 'Web']; this.exampleIndex = (this.exampleIndex + 1) % examples.length; const elId = examples[this.exampleIndex]; this.elements.projectInput.value = document.getElementById(elId).value; this.parseProject(); this.showToast(`${types[this.exampleIndex]} örneği!`, 'success'); },
-        pasteFromClipboard() { navigator.clipboard.readText().then(text => { if (text) { this.elements.projectInput.value = text; this.parseProject(); this.showToast('Yapıştırıldı!', 'success'); } }).catch(() => this.showToast('Pano hatası', 'error')); },
+        loadNextExample() { this.saveToUndoStack(); const examples = ['examplePy', 'exampleC', 'exampleWeb']; const types = ['Python', 'C', 'Web']; this.exampleIndex = (this.exampleIndex + 1) % examples.length; const elId = examples[this.exampleIndex]; this.elements.projectInput.value = document.getElementById(elId).value; this.parseProject(); this.showToast(`${types[this.exampleIndex]} example!`, 'success'); },
+        pasteFromClipboard() { navigator.clipboard.readText().then(text => { if (text) { this.elements.projectInput.value = text; this.parseProject(); this.showToast('Pasted!', 'success'); } }).catch(() => this.showToast('Clipboard error', 'error')); },
         showToast(message, type = 'success', duration = 3500) { const existing = document.querySelector('.toast'); if (existing) existing.remove(); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerHTML = `<span>${message}</span>`; document.body.appendChild(toast); setTimeout(() => toast.remove(), duration); },
         initSplitterDrag(e) { e.preventDefault(); const iframe = this.elements.webFrame; if (iframe) iframe.style.pointerEvents = 'none'; const onMouseMove = (moveEvent) => { const newLeftWidth = Math.max(300, Math.min(moveEvent.clientX, document.body.clientWidth - 300)); this.elements.appContainer.style.gridTemplateColumns = `${newLeftWidth}px 2px 1fr`; }; const onMouseUp = () => { if (iframe) iframe.style.pointerEvents = 'auto'; document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }; document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp); }
     };
