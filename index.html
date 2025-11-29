@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -12,9 +12,9 @@
     <div class="app-container" id="appContainer">
         <div id="dropOverlay" class="drop-overlay">
             <div class="drop-message">
-                Dosyayı Buraya Bırakın<br>
-                <small style="font-size:13px; font-weight:400; color:var(--text-secondary);">.zip veya kod
-                    dosyası</small>
+                Drop File Here<br>
+                <small style="font-size:13px; font-weight:400; color:var(--text-secondary);">.zip or code
+                    file</small>
             </div>
         </div>
 
@@ -22,13 +22,13 @@
             <div class="header">
                 <h1>Live Editor <span class="badge"
                         style="background:var(--accent-color); color:#fff; border:none;">v3.5.5</span></h1>
-                <p>Web, Python veya C kodu çalıştırın.</p>
+                <p>Run Web, Python or C code.</p>
             </div>
             <div class="section">
                 <div class="section-title">
-                    1. Proje Kodunu Yapıştır
+                    1. Paste Project Code
                     <div class="title-actions">
-                        <button id="ornekYukleBtn" class="action-btn" title="Örnek Değiştir (Web > Py > C)">
+                        <button id="ornekYukleBtn" class="action-btn" title="Switch Example (Web > Py > C)">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <polygon
@@ -36,14 +36,14 @@
                                 </polygon>
                             </svg>
                         </button>
-                        <button id="undoBtn" class="undo-btn" title="Geri Al (Ctrl+Z)" disabled>
+                        <button id="undoBtn" class="undo-btn" title="Undo (Ctrl+Z)" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M10 15v5l-4-4 4-4v5h8a1 1 0 0 0 0-2h-8" />
                                 <path d="M4 5h8a1 1 0 0 1 0 2H4v5l-4-4 4-4v5z" />
                             </svg>
                         </button>
-                        <button id="temizleBtn" class="action-btn" title="Temizle" disabled>
+                        <button id="temizleBtn" class="action-btn" title="Clear" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -52,7 +52,7 @@
                                 </path>
                             </svg>
                         </button>
-                        <button id="pasteBtn" class="paste-btn" title="Yapıştır">
+                        <button id="pasteBtn" class="paste-btn" title="Paste">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2">
@@ -60,7 +60,7 @@
                                 <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                             </svg>
                         </button>
-                        <button id="helpBtn" class="help-btn" title="Yardım">
+                        <button id="helpBtn" class="help-btn" title="Help">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -71,22 +71,22 @@
                     </div>
                 </div>
                 <textarea class="code-input" id="projectInput"
-                    placeholder="//--- main.py --- veya //--- index.html --- formatında yapıştırın..."></textarea>
+                    placeholder="Paste in //--- main.py --- or //--- index.html --- format..."></textarea>
                 <div
                     style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11px; color:var(--text-secondary);">
-                    <span id="editorStats">0 satır • 0 karakter</span>
-                    <span id="formatHint" style="opacity:0.6;">Ctrl+Enter ile ayrıştır</span>
+                    <span id="editorStats">0 lines • 0 characters</span>
+                    <span id="formatHint" style="opacity:0.6;">Ctrl+Enter to parse</span>
                 </div>
-                <button class="btn btn-primary" id="parseBtn">Projeyi Ayrıştır</button>
+                <button class="btn btn-primary" id="parseBtn">Parse Project</button>
             </div>
             <div class="section file-list-section">
                 <div class="section-title">
-                    Dosyalar
+                    Files
                     <span id="fileBadge" class="badge" style="display:none;">0</span>
                     <div id="statsBar" class="stats-bar" style="display:none;">
                         <div class="stat">
                             <div class="stat-value" id="fileCount">0</div>
-                            <div class="stat-label">Dosya</div>
+                            <div class="stat-label">Files</div>
                         </div>
                         <div class="stat">
                             <div class="stat-value" id="totalSize">0</div>
@@ -96,14 +96,14 @@
                 </div>
                 <div id="fileListContainer">
                     <div class="empty-state">
-                        <p><strong>Henüz dosya yok</strong></p>
-                        <p>Proje kodunuzu yapıştırıp ayrıştırın.</p>
+                        <p><strong>No files yet</strong></p>
+                        <p>Paste your project code and parse it.</p>
                     </div>
                 </div>
             </div>
             <div class="section">
-                <div class="section-title">2. Dışa Aktar</div>
-                <button class="btn btn-secondary" id="downloadBtn" disabled>Projeyi .zip Olarak İndir</button>
+                <div class="section-title">2. Export</div>
+                <button class="btn btn-secondary" id="downloadBtn" disabled>Download Project as .zip</button>
             </div>
         </div>
         <div class="splitter" id="splitter"></div>
@@ -119,10 +119,10 @@
                             stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
                         </svg>
-                        Çalıştır
+                        Run
                     </button>
-                    <button class="icon-btn" id="refreshBtn" disabled>Yenile</button>
-                    <button class="icon-btn" id="fullscreenBtn">Tam Ekran</button>
+                    <button class="icon-btn" id="refreshBtn" disabled>Refresh</button>
+                    <button class="icon-btn" id="fullscreenBtn">Full Screen</button>
                 </div>
             </div>
             <div id="previewContainer" class="preview-container">
@@ -131,36 +131,36 @@
 
                 <div id="terminalContainer" class="terminal-container">
                     <div id="terminalView" class="terminal-view">
-                        <div class="terminal-info">Terminal Hazır. Kodu çalıştırmak için "Çalıştır"a basın.</div>
+                        <div class="terminal-info">Terminal Ready. Press "Run" to execute code.</div>
                     </div>
                     <div class="stdin-wrapper" id="stdinWrapper">
-                        <div class="stdin-resizer" id="stdinResizer" title="Boyutu ayarla"></div>
-                        <div class="stdin-header" id="stdinHeader" title="Paneli Aç/Kapat">
+                        <div class="stdin-resizer" id="stdinResizer" title="Resize"></div>
+                        <div class="stdin-header" id="stdinHeader" title="Open/Close Panel">
                             <div class="stdin-title">
                                 <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round">
                                     <polyline points="6 9 12 15 18 9"></polyline>
                                 </svg>
-                                Akıllı Girdiler
+                                Smart Inputs
                             </div>
-                            <span class="manual-toggle" id="manualToggle">Manuel Düzenle</span>
+                            <span class="manual-toggle" id="manualToggle">Manual Edit</span>
                         </div>
                         <div class="stdin-content">
                             <div id="dynamicInputs" class="dynamic-inputs">
-                                <div class="empty-inputs-msg">Kodda input() algılanmadı. Gerekirse 'Manuel Düzenle'ye
-                                    basın.</div>
+                                <div class="empty-inputs-msg">No input() detected in code. Press 'Manual Edit' if
+                                    needed.</div>
                             </div>
                             <textarea id="rawStdin" class="raw-stdin"
-                                placeholder="Verileri satır satır girin..."></textarea>
+                                placeholder="Enter data line by line..."></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div id="emptyView" class="preview-empty" style="display:none;">
                     <div class="preview-empty-content">
-                        <h3>Önizleme Yok</h3>
-                        <p>index.html veya çalıştırılabilir kod gerekli.</p>
+                        <h3>No Preview</h3>
+                        <p>index.html or executable code required.</p>
                     </div>
                 </div>
             </div>
@@ -170,55 +170,55 @@
     <div id="helpModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>AI Sistem Talimatı</h2><button id="closeHelpModalBtn" class="close-btn">&times;</button>
+                <h2>AI System Instructions</h2><button id="closeHelpModalBtn" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="ai-command-wrapper">
-                    <pre><code>ROL: Sen, çok dosyalı kod asistanısın. Her dosyayı aşağıdaki format ile ayır.
+                    <pre><code>ROLE: You are a multi-file code assistant. Separate each file with the following format.
 
 FORMAT:
-HER ŞEY TEK KOD BLOĞU İÇİNDE OLACAK VE YORUM SATIRLARI DA İÇİNDE OLACAK
-//--- dosya.uzanti ---
-kod içeriği
+EVERYTHING IN ONE CODE BLOCK INCLUDING COMMENT LINES
+//--- filename.extension ---
+code content
 
-//--- klasor/alt_dosya.py ---
-alt klasördeki dosya
+//--- folder/subfile.py ---
+file in subfolder
 
 //--- src/components/Header.jsx ---
-iç içe klasör örneği
+nested folder example
 
-KURALLAR:
-- Başlık: //--- ile başla, --- ile bitir
-- Alt klasör: Slash (/) ile ayır (ornek: assets/style.css)
-- Her dosya arasında boşluk bırakma
-- Direkt kodu yapıştır, açıklama ekleme
+RULES:
+- Header: Start with //--- and end with ---
+- Subfolder: Separate with slash (/) (example: assets/style.css)
+- Don't leave space between files
+- Paste code directly, don't add explanations
 
-C/C++ INPUT SİSTEMİ:
-- scanf kullanırken input kutuları için magic comment kullan
+C/C++ INPUT SYSTEM:
+- Use magic comments for input boxes when using scanf
 - Format: // input("Label")
-- scanf/cin satırından ÖNCE yorum olarak ekle
-- Örnek:
-  // input("Adınız:")
-  scanf("%s", isim);</code></pre>
+- Add as comment BEFORE scanf/cin line
+- Example:
+  // input("Your Name:")
+  scanf("%s", name);</code></pre>
                 </div>
             </div>
-            <div class="modal-footer"><button id="copyCodeBtn" class="btn btn-primary">Kopyala</button></div>
+            <div class="modal-footer"><button id="copyCodeBtn" class="btn btn-primary">Copy</button></div>
         </div>
     </div>
     <div id="downloadModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 450px;">
             <div class="modal-header">
-                <h2>İndir</h2><button id="closeDownloadModalBtn" class="close-btn">&times;</button>
+                <h2>Download</h2><button id="closeDownloadModalBtn" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="input-group">
-                    <label for="projectNameInput">Proje Adı</label>
-                    <input type="text" id="projectNameInput" value="proje" placeholder="proje-adi">
+                    <label for="projectNameInput">Project Name</label>
+                    <input type="text" id="projectNameInput" value="project" placeholder="project-name">
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancelDownloadBtn" class="btn btn-secondary">İptal</button>
-                <button id="confirmDownloadBtn" class="btn btn-primary">İndir</button>
+                <button id="cancelDownloadBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmDownloadBtn" class="btn btn-primary">Download</button>
             </div>
         </div>
     </div>
@@ -227,39 +227,39 @@ C/C++ INPUT SİSTEMİ:
 //--- main.py ---
 import time
 
-print("Sistem Başlatılıyor...")
-# GİRDİ TESTİ: Aşağıda otomatik kutucuklar çıkmalı
-ad = input("Adınız:")
-yas = int(input("Yaşınız:"))
+print("System Starting...")
+# INPUT TEST: Automatic input boxes should appear below
+name = input("Your Name:")
+age = int(input("Your Age:"))
 
-print(f"\nMerhaba {ad}!")
-print(f"Demek {yas} yaşındasın.")
+print(f"\nHello {name}!")
+print(f"So you are {age} years old.")
 
-if yas > 18:
-    print("Yetişkin girişi onaylandı.")
+if age > 18:
+    print("Adult access approved.")
 else:
-    print("Genç kullanıcı girişi onaylandı.")
+    print("Young user access approved.")
     
-print("İşlem tamam.")
+print("Process complete.")
 </textarea>
 
     <textarea id="exampleC" style="display: none;">
 //--- main.c ---
 #include <stdio.h>
 int main() {
-    int sayi;
-    // input("Sayıyı Girin:")
-    printf("Bir sayi girin: ");
-    scanf("%d", &sayi);
-    printf("Girdiginiz sayinin karesi: %d", sayi * sayi);
+    int number;
+    // input("Enter Number:")
+    printf("Enter a number: ");
+    scanf("%d", &number);
+    printf("Square of your number: %d", number * number);
     return 0;
 }
 </textarea>
 
     <textarea id="exampleWeb" style="display: none;">
 //--- index.html ---
-<h1>Web Testi</h1>
-<button onclick="alert('Çalışıyor!')">Tıkla</button>
+<h1>Web Test</h1>
+<button onclick="alert('Working!')">Click</button>
 </textarea>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
