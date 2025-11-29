@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live-v3.6</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container" id="appContainer">
+        <div id="dropOverlay" class="drop-overlay">
+            <div class="drop-message">
+                Dosyayı Buraya Bırakın<br>
+                <small style="font-size:13px; font-weight:400; color:var(--text-secondary);">.zip veya kod
+                    dosyası</small>
+            </div>
+        </div>
+
+        <div class="left-panel">
+            <div class="header">
+                <h1>Live Editor <span class="badge"
+                        style="background:var(--accent-color); color:#fff; border:none;">v3.5.5</span></h1>
+                <p>Web, Python veya C kodu çalıştırın.</p>
+            </div>
+            <div class="section">
+                <div class="section-title">
+                    1. Proje Kodunu Yapıştır
+                    <div class="title-actions">
+                        <button id="ornekYukleBtn" class="action-btn" title="Örnek Değiştir (Web > Py > C)">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon
+                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                </polygon>
+                            </svg>
+                        </button>
+                        <button id="undoBtn" class="undo-btn" title="Geri Al (Ctrl+Z)" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10 15v5l-4-4 4-4v5h8a1 1 0 0 0 0-2h-8" />
+                                <path d="M4 5h8a1 1 0 0 1 0 2H4v5l-4-4 4-4v5z" />
+                            </svg>
+                        </button>
+                        <button id="temizleBtn" class="action-btn" title="Temizle" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                </path>
+                            </svg>
+                        </button>
+                        <button id="pasteBtn" class="paste-btn" title="Yapıştır">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2">
+                                </path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                            </svg>
+                        </button>
+                        <button id="helpBtn" class="help-btn" title="Yardım">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <textarea class="code-input" id="projectInput"
+                    placeholder="//--- main.py --- veya //--- index.html --- formatında yapıştırın..."></textarea>
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11px; color:var(--text-secondary);">
+                    <span id="editorStats">0 satır • 0 karakter</span>
+                    <span id="formatHint" style="opacity:0.6;">Ctrl+Enter ile ayrıştır</span>
+                </div>
+                <button class="btn btn-primary" id="parseBtn">Projeyi Ayrıştır</button>
+            </div>
+            <div class="section file-list-section">
+                <div class="section-title">
+                    Dosyalar
+                    <span id="fileBadge" class="badge" style="display:none;">0</span>
+                    <div id="statsBar" class="stats-bar" style="display:none;">
+                        <div class="stat">
+                            <div class="stat-value" id="fileCount">0</div>
+                            <div class="stat-label">Dosya</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="totalSize">0</div>
+                            <div class="stat-label">KB</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="fileListContainer">
+                    <div class="empty-state">
+                        <p><strong>Henüz dosya yok</strong></p>
+                        <p>Proje kodunuzu yapıştırıp ayrıştırın.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title">2. Dışa Aktar</div>
+                <button class="btn btn-secondary" id="downloadBtn" disabled>Projeyi .zip Olarak İndir</button>
+            </div>
+        </div>
+        <div class="splitter" id="splitter"></div>
+        <div class="right-panel">
+            <div class="preview-header">
+                <div class="preview-tabs">
+                    <button class="tab-btn active" id="tabWeb">Web</button>
+                    <button class="tab-btn" id="tabTerminal">Terminal</button>
+                </div>
+                <div class="preview-actions">
+                    <button class="icon-btn run-btn" id="runCodeBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Çalıştır
+                    </button>
+                    <button class="icon-btn" id="refreshBtn" disabled>Yenile</button>
+                    <button class="icon-btn" id="fullscreenBtn">Tam Ekran</button>
+                </div>
+            </div>
+            <div id="previewContainer" class="preview-container">
+                <iframe id="webFrame" class="preview-frame active"
+                    sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups"></iframe>
+
+                <div id="terminalContainer" class="terminal-container">
+                    <div id="terminalView" class="terminal-view">
+                        <div class="terminal-info">Terminal Hazır. Kodu çalıştırmak için "Çalıştır"a basın.</div>
+                    </div>
+                    <div class="stdin-wrapper" id="stdinWrapper">
+                        <div class="stdin-resizer" id="stdinResizer" title="Boyutu ayarla"></div>
+                        <div class="stdin-header" id="stdinHeader" title="Paneli Aç/Kapat">
+                            <div class="stdin-title">
+                                <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                                Akıllı Girdiler
+                            </div>
+                            <span class="manual-toggle" id="manualToggle">Manuel Düzenle</span>
+                        </div>
+                        <div class="stdin-content">
+                            <div id="dynamicInputs" class="dynamic-inputs">
+                                <div class="empty-inputs-msg">Kodda input() algılanmadı. Gerekirse 'Manuel Düzenle'ye
+                                    basın.</div>
+                            </div>
+                            <textarea id="rawStdin" class="raw-stdin"
+                                placeholder="Verileri satır satır girin..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="emptyView" class="preview-empty" style="display:none;">
+                    <div class="preview-empty-content">
+                        <h3>Önizleme Yok</h3>
+                        <p>index.html veya çalıştırılabilir kod gerekli.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>AI Sistem Talimatı</h2><button id="closeHelpModalBtn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="ai-command-wrapper">
+                    <pre><code>ROL: Sen, çok dosyalı kod asistanısın. Her dosyayı aşağıdaki format ile ayır.
+
+FORMAT:
+HER ŞEY TEK KOD BLOĞU İÇİNDE OLACAK VE YORUM SATIRLARI DA İÇİNDE OLACAK
+//--- dosya.uzanti ---
+kod içeriği
+
+//--- klasor/alt_dosya.py ---
+alt klasördeki dosya
+
+//--- src/components/Header.jsx ---
+iç içe klasör örneği
+
+KURALLAR:
+- Başlık: //--- ile başla, --- ile bitir
+- Alt klasör: Slash (/) ile ayır (ornek: assets/style.css)
+- Her dosya arasında boşluk bırakma
+- Direkt kodu yapıştır, açıklama ekleme
+
+C/C++ INPUT SİSTEMİ:
+- scanf kullanırken input kutuları için magic comment kullan
+- Format: // input("Label")
+- scanf/cin satırından ÖNCE yorum olarak ekle
+- Örnek:
+  // input("Adınız:")
+  scanf("%s", isim);</code></pre>
+                </div>
+            </div>
+            <div class="modal-footer"><button id="copyCodeBtn" class="btn btn-primary">Kopyala</button></div>
+        </div>
+    </div>
+    <div id="downloadModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>İndir</h2><button id="closeDownloadModalBtn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="projectNameInput">Proje Adı</label>
+                    <input type="text" id="projectNameInput" value="proje" placeholder="proje-adi">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDownloadBtn" class="btn btn-secondary">İptal</button>
+                <button id="confirmDownloadBtn" class="btn btn-primary">İndir</button>
+            </div>
+        </div>
+    </div>
+
+    <textarea id="examplePy" style="display: none;">
+//--- main.py ---
+import time
+
+print("Sistem Başlatılıyor...")
+# GİRDİ TESTİ: Aşağıda otomatik kutucuklar çıkmalı
+ad = input("Adınız:")
+yas = int(input("Yaşınız:"))
+
+print(f"\nMerhaba {ad}!")
+print(f"Demek {yas} yaşındasın.")
+
+if yas > 18:
+    print("Yetişkin girişi onaylandı.")
+else:
+    print("Genç kullanıcı girişi onaylandı.")
+    
+print("İşlem tamam.")
+</textarea>
+
+    <textarea id="exampleC" style="display: none;">
+//--- main.c ---
+#include <stdio.h>
+int main() {
+    int sayi;
+    // input("Sayıyı Girin:")
+    printf("Bir sayi girin: ");
+    scanf("%d", &sayi);
+    printf("Girdiginiz sayinin karesi: %d", sayi * sayi);
+    return 0;
+}
+</textarea>
+
+    <textarea id="exampleWeb" style="display: none;">
+//--- index.html ---
+<h1>Web Testi</h1>
+<button onclick="alert('Çalışıyor!')">Tıkla</button>
+</textarea>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
