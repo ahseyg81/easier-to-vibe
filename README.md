@@ -1,5 +1,7 @@
 # easier-to-vibe
 
+https://ahseyg81.github.io/easier-to-vibe/
+
 "Tired of breaking your coding flow just to copy-paste AI snippets?"
 
 **easier-to-vibe** is a frictionless, browser-based code playground. It instantly turns multi-file AI code snippets into running applications. No setup, no terminal mess—just pure coding vibe.
