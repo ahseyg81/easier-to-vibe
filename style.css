@@ -1,16 +1,17 @@
 :root {
-    --bg-deep: #1a1a1a;
-    --bg-panel: #212121;
-    --bg-item: #2a2a2a;
-    --bg-input: #111;
-    --border-color: #333;
-    --border-hover: #444;
-    --text-primary: #f0f0f0;
-    --text-secondary: #8a8a8a;
-    --accent-color: #3b82f6;
-    --accent-hover: #2563eb;
-    --term-bg: #0c0c0c;
-    --term-text: #33ff00;
+    --bg-deep: #0d1117;
+    --bg-panel: #161b22;
+    --bg-item: #21262d;
+    --bg-input: #0d1117;
+    --border-color: #30363d;
+    --border-hover: #8b949e;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --accent-color: #58a6ff;
+    --accent-hover: #1f6feb;
+    --accent-red: #ff7b72;
+    --term-bg: #0d1117;
+    --term-text: #c9d1d9;
 }
 
 * {
@@ -319,7 +320,7 @@ body {
 }
 
 .terminal-error {
-    color: #ef4444;
+    color: var(--accent-red);
 }
 
 .terminal-info {
@@ -331,7 +332,7 @@ body {
 .stdin-wrapper {
     display: flex;
     flex-direction: column;
-    background: #141414;
+    background: var(--bg-panel);
     flex-shrink: 0;
     border-top: 1px solid var(--border-color);
     height: 200px;
@@ -357,7 +358,7 @@ body {
 }
 
 .stdin-resizer:hover {
-    background: rgba(59, 130, 246, 0.5);
+    background: rgba(88, 166, 255, 0.3);
 }
 
 .stdin-header {
@@ -366,13 +367,13 @@ body {
     align-items: center;
     padding: 0 12px;
     height: 36px;
-    background: #1a1a1a;
+    background: var(--bg-item);
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
 }
 
 .stdin-header:hover {
-    background: #222;
+    background: var(--border-color);
 }
 
 .stdin-title {
@@ -432,14 +433,14 @@ body {
 
 .input-row label {
     font-size: 11px;
-    color: #ccc;
+    color: var(--text-secondary);
     font-family: 'SF Mono', monospace;
 }
 
 .input-row input {
     background: var(--bg-input);
     border: 1px solid var(--border-color);
-    color: #fff;
+    color: var(--text-primary);
     padding: 6px 10px;
     border-radius: 4px;
     font-family: monospace;
@@ -453,7 +454,7 @@ body {
 }
 
 .input-row input.error {
-    border-color: #ef4444;
+    border-color: var(--accent-red);
     animation: shake 0.3s;
 }
 
@@ -461,7 +462,7 @@ body {
     width: 100%;
     background: var(--bg-input);
     border: 1px solid var(--border-color);
-    color: #fff;
+    color: var(--text-primary);
     padding: 8px;
     border-radius: 4px;
     font-family: monospace;
@@ -478,11 +479,11 @@ body {
 
 .empty-inputs-msg {
     font-size: 12px;
-    color: #555;
+    color: var(--text-secondary);
     font-style: italic;
     text-align: center;
     padding: 10px;
-    border: 1px dashed #333;
+    border: 1px dashed var(--border-color);
     border-radius: 4px;
 }
 
@@ -507,18 +508,39 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fafafa;
+    background-color: transparent;
+    user-select: none;
 }
 
 .preview-empty-content {
     text-align: center;
-    color: #a3a3a3;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.preview-empty-content:hover {
+    opacity: 1;
+}
+
+.empty-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
 }
 
 .preview-empty-content h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #525252;
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.preview-empty-content p {
+    font-size: 0.9rem;
+    margin: 0;
+    color: var(--text-secondary);
 }
 
 .stats-bar {
@@ -575,7 +597,7 @@ body {
 }
 
 .toast.error {
-    border-color: #ef4444;
+    border-color: var(--accent-red);
 }
 
 .toast.warning {
@@ -891,6 +913,6 @@ body {
     background: var(--bg-item);
 }
 
-.app-container.dragging .drop-overlay {
+.drop-overlay.visible {
     display: flex;
 }
