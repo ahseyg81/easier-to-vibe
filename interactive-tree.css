@@ -1,0 +1,40 @@
+/* --- INTERACTIVE FILE TREE v3.7.0 --- */
+.file-tree .file>.file-details {
+    cursor: pointer;
+}
+
+.file-tree .file>.file-details:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+}
+
+.file-tree .file.active>.file-details {
+    background-color: rgba(59, 130, 246, 0.25);
+    border-left: 2px solid var(--accent-color);
+    margin-left: -2px;
+}
+
+.file-tree .folder>.file-details {
+    cursor: pointer;
+}
+
+.folder-arrow {
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+    padding-left: 8px;
+    opacity: 0.5;
+    transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.file-tree .folder>.file-details:hover .folder-arrow {
+    opacity: 1;
+}
+
+.file-tree .folder.collapsed>.file-details .folder-arrow {
+    transform: rotate(-90deg);
+}
+
+.file-tree .folder.collapsed>ul {
+    display: none;
+}
