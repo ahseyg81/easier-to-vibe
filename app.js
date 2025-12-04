@@ -13,9 +13,9 @@
             if (!this.detectedLang) return;
 
             const terminal = this.elements.terminalView;
-            const rawStdinVal = document.getElementById('rawStdin').value;
+            const rawStdinVal = this.elements.rawStdin.value;
             let finalStdin = rawStdinVal;
-            const dynamicContainer = document.getElementById('dynamicInputs');
+            const dynamicContainer = this.elements.dynamicInputs;
 
             // --- INPUT VALIDATION (SECURITY) ---
             // If dynamic inputs are active and empty, don't run
@@ -115,8 +115,9 @@
             this.elements.downloadModal.addEventListener('click', (e) => { if (e.target === this.elements.downloadModal) this.toggleModal('download', false); });
             this.elements.projectNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.downloadZip(); });
             this.elements.projectInput.addEventListener('input', () => this.updateEditorStats());
-            this.elements.projectInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Tab') { e.preventDefault(); const s = this.selectionStart; this.value = this.value.substring(0, this.selectionStart) + "    " + this.value.substring(this.selectionEnd); this.selectionStart = this.selectionEnd = s + 4; }
+            this.elements.projectInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart; e.target.value = e.target.value.substring(0, e.target.selectionStart) + "    " + e.target.value.substring(e.target.selectionEnd); e.target.selectionStart = e.target.selectionEnd = s + 4; }
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); this.parseProject(); }
             });
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.toggleModal('help', false); this.toggleModal('download', false); } if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); } });
             this.elements.runCodeBtn.addEventListener('click', () => this.runCode());
@@ -167,6 +168,33 @@
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             });
+
+            // --- DRAG & DROP FUNCTIONALITY ---
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.body.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            document.body.addEventListener('dragenter', () => {
+                this.elements.dropOverlay.classList.add('visible');
+            });
+
+            document.body.addEventListener('dragleave', (e) => {
+                if (e.target === document.body || e.target === this.elements.dropOverlay) {
+                    this.elements.dropOverlay.classList.remove('visible');
+                }
+            });
+
+            document.body.addEventListener('drop', async (e) => {
+                this.elements.dropOverlay.classList.remove('visible');
+                const files = e.dataTransfer.files;
+
+                if (files.length > 0) {
+                    await this.handleDroppedFiles(files);
+                }
+            });
         },
 
         generateInputFields(code) {
@@ -174,7 +202,12 @@
             const container = this.elements.dynamicInputs;
             container.innerHTML = '';
 
-            if (!code) return;
+            // Close panel if no code or web project (doesn't need stdin)
+            if (!code || this.detectedLang === 'web') {
+                container.innerHTML = '<div class="empty-inputs-msg">No input needed for this project.</div>';
+                this.elements.stdinWrapper.classList.add('collapsed');
+                return;
+            }
 
             let match;
             let count = 0;
@@ -313,7 +346,7 @@
             this.saveToUndoStack();
 
             const raw = this.elements.projectInput.value;
-            const headerRegex = /^\s*\/\/\s*-{3,}\s*(.+?)\s*-{3,}/;
+            const headerRegex = /^\s*\/\/\s*-{3,}\s*([^\s]+\.[^\s]+)\s*-{3,}/;
             const lines = raw.replace(/\r\n?/g, '\n').split('\n');
             const parsedFiles = {}; let currentFile = null; let currentContent = [];
             for (const line of lines) {
@@ -341,12 +374,109 @@
                 const totalSize = paths.reduce((acc, path) => acc + new Blob([this.projectFiles[path]]).size, 0);
                 this.elements.fileCount.textContent = count; this.elements.totalSize.textContent = (totalSize / 1024).toFixed(1); this.elements.fileBadge.textContent = count;
                 this.elements.fileListContainer.innerHTML = `<div class="file-tree">${this.renderFileTree(this.buildFileTree())}</div>`;
+
+                // Add file click events (double-click to scroll to file)
+                this.elements.fileListContainer.querySelectorAll('.file').forEach(fileEl => {
+                    fileEl.addEventListener('dblclick', () => {
+                        const filePath = fileEl.dataset.path;
+                        this.scrollToFile(filePath);
+                        // Highlight active file
+                        this.elements.fileListContainer.querySelectorAll('.file').forEach(f => f.classList.remove('active'));
+                        fileEl.classList.add('active');
+                        // Remove highlight after 1.5 seconds
+                        setTimeout(() => fileEl.classList.remove('active'), 1500);
+                    });
+                });
+
+                // Add folder toggle events
+                this.elements.fileListContainer.querySelectorAll('.folder > .file-details').forEach(folderDetails => {
+                    folderDetails.addEventListener('click', () => {
+                        const folderLi = folderDetails.parentElement;
+                        folderLi.classList.toggle('collapsed');
+                    });
+                });
             } else this.elements.fileListContainer.innerHTML = `<div class="empty-state"><p><strong>No files</strong></p></div>`;
         },
 
         updateEditorStats() { const text = this.elements.projectInput.value; this.elements.editorStats.textContent = `${text.split('\n').length} lines • ${text.length} chars`; this.elements.temizleBtn.disabled = text.length === 0; this.elements.undoBtn.disabled = this.undoStack.length === 0; },
-        buildFileTree() { const tree = {}; Object.keys(this.projectFiles).forEach(path => { const parts = path.split('/').filter(Boolean); let currentLevel = tree; parts.forEach((part, index) => { if (index === parts.length - 1) currentLevel[part] = { __isFile: true, size: new Blob([this.projectFiles[path]]).size }; else { if (!currentLevel[part]) currentLevel[part] = { __isFolder: true, children: {} }; currentLevel = currentLevel[part].children; } }); }); return tree; },
-        renderFileTree(node) { if (!node || Object.keys(node).length === 0) return ''; const sortedKeys = Object.keys(node).sort((a, b) => { const aIsFolder = node[a].__isFolder, bIsFolder = node[b].__isFolder; if (aIsFolder && !bIsFolder) return -1; if (!aIsFolder && bIsFolder) return 1; return a.localeCompare(b); }); let html = '<ul>'; sortedKeys.forEach(key => { const item = node[key]; if (item.__isFolder) html += `<li class="folder"><div class="file-details"><span class="file-name">${key}</span></div>${this.renderFileTree(item.children)}</li>`; else if (item.__isFile) html += `<li class="file"><div class="file-details"><span class="file-name">${key}</span><span class="file-size">${(item.size / 1024).toFixed(2)} KB</span></div></li>`; }); return html + '</ul>'; },
+
+        scrollToFile(filePath) {
+            const textarea = this.elements.projectInput;
+            const text = textarea.value;
+            // Find the file header pattern: //--- filePath ---
+            const headerPattern = new RegExp(`^\\s*\\/\\/\\s*-{3,}\\s*${filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*-{3,}`, 'm');
+            const match = text.match(headerPattern);
+            if (match) {
+                const index = text.indexOf(match[0]);
+
+                // Create a mirror div to calculate exact pixel offset
+                const div = document.createElement('div');
+                const style = getComputedStyle(textarea);
+
+                // Copy styles that affect layout
+                const properties = [
+                    'direction', 'boxSizing', 'width', 'height', 'overflowX', 'overflowY',
+                    'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+                    'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch', 'fontSize', 'fontSizeAdjust', 'lineHeight', 'fontFamily',
+                    'textAlign', 'textTransform', 'textIndent', 'textDecoration', 'letterSpacing', 'wordSpacing',
+                    'tabSize', 'MozTabSize'
+                ];
+
+                properties.forEach(prop => {
+                    div.style[prop] = style[prop];
+                });
+
+                // Reset some styles to ensure correct measurement
+                div.style.position = 'absolute';
+                div.style.top = '0px';
+                div.style.left = '-9999px';
+                div.style.visibility = 'hidden';
+                div.style.whiteSpace = 'pre-wrap';
+                div.style.wordWrap = 'break-word';
+                div.style.width = textarea.clientWidth + 'px';
+                div.style.height = 'auto';
+
+                // Set content up to the target index
+                div.textContent = text.substring(0, index);
+
+                document.body.appendChild(div);
+
+                // Calculate scroll position (height of text before target)
+                // scrollHeight includes padding-top and padding-bottom
+                // We want to scroll past the content + padding-top, but keep padding-top visible? 
+                // No, scrollTop=0 shows padding-top. 
+                // If we want the target line to be at the very top (hiding padding-top), we scroll height + padding-top.
+                // But usually we want it to look like the first line.
+                // Let's try div.scrollHeight - paddingBottom.
+                const paddingBottom = parseFloat(style.paddingBottom) || 0;
+                const topOffset = div.scrollHeight - paddingBottom;
+
+                document.body.removeChild(div);
+
+                textarea.scrollTop = topOffset;
+                this.showToast(`Navigated to ${filePath}`, 'info');
+            }
+        },
+        buildFileTree() { const tree = {}; Object.keys(this.projectFiles).forEach(path => { const parts = path.split('/').filter(Boolean); let currentLevel = tree; parts.forEach((part, index) => { if (index === parts.length - 1) currentLevel[part] = { __isFile: true, size: new Blob([this.projectFiles[path]]).size, fullPath: path }; else { if (!currentLevel[part]) currentLevel[part] = { __isFolder: true, children: {} }; currentLevel = currentLevel[part].children; } }); }); return tree; },
+        renderFileTree(node) {
+            if (!node || Object.keys(node).length === 0) return '';
+            const sortedKeys = Object.keys(node).sort((a, b) => {
+                const aIsFolder = node[a].__isFolder, bIsFolder = node[b].__isFolder;
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+                return a.localeCompare(b);
+            });
+            let html = '<ul>';
+            sortedKeys.forEach(key => {
+                const item = node[key];
+                if (item.__isFolder) {
+                    html += `<li class="folder"><div class="file-details"><span class="file-name">${key}</span><svg class="folder-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></div>${this.renderFileTree(item.children)}</li>`;
+                } else if (item.__isFile) {
+                    html += `<li class="file" data-path="${item.fullPath}"><div class="file-details"><span class="file-name">${key}</span><span class="file-size">${(item.size / 1024).toFixed(2)} KB</span></div></li>`;
+                }
+            });
+            return html + '</ul>';
+        },
 
         updatePreview(isRefresh = false) {
             const hasIndexHtml = this.projectFiles["index.html"];
@@ -398,21 +528,78 @@
             else if (hasMainC) this.detectedLang = 'c';
             else if (hasMainCpp) this.detectedLang = 'cpp';
 
+            // === SMART TAB SWITCHING ===
             if (this.detectedLang) {
                 this.elements.runCodeBtn.style.display = 'inline-flex';
-                if (!htmlFileName) this.switchTab('terminal');
+                // Auto-switch to terminal if no HTML files exist (pure programming project)
+                if (!htmlFileName) {
+                    this.switchTab('terminal');
+                }
+                // If HTML exists, stay on preview (mixed project - HTML takes priority)
             } else {
                 this.elements.runCodeBtn.style.display = 'none';
+                // If no programming language and no HTML, show empty state
                 if (!htmlFileName) {
                     this.elements.emptyView.style.display = 'flex';
                     this.elements.webFrame.classList.remove('active');
                     this.elements.terminalContainer.classList.remove('active');
+                } else {
+                    // Pure web project - ensure we're on preview tab
+                    this.switchTab('web');
                 }
             }
             this.elements.refreshBtn.disabled = !htmlFileName;
         },
 
-        openDownloadModal() { if (Object.keys(this.projectFiles).length === 0) return; this.elements.projectNameInput.value = 'project'; this.toggleModal('download', true); setTimeout(() => this.elements.projectNameInput.select(), 100); },
+        openDownloadModal() {
+            if (Object.keys(this.projectFiles).length === 0) return;
+
+            // Try to extract a smart project name
+            let suggestedName = 'project';
+
+            // 1. Try to get <title> from index.html
+            const htmlContent = this.projectFiles['index.html'];
+            if (htmlContent) {
+                const titleMatch = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i);
+                if (titleMatch && titleMatch[1]) {
+                    suggestedName = titleMatch[1].trim()
+                        // Turkish character normalization
+                        .replace(/ı/g, 'i').replace(/İ/g, 'i')
+                        .replace(/ş/g, 's').replace(/Ş/g, 's')
+                        .replace(/ğ/g, 'g').replace(/Ğ/g, 'g')
+                        .replace(/ü/g, 'u').replace(/Ü/g, 'u')
+                        .replace(/ö/g, 'o').replace(/Ö/g, 'o')
+                        .replace(/ç/g, 'c').replace(/Ç/g, 'c')
+                        .replace(/[^a-zA-Z0-9\s\-_]/g, '') // Remove special chars
+                        .replace(/\s+/g, '-') // Spaces to dashes
+                        .toLowerCase()
+                        .substring(0, 50); // Limit length
+                }
+            }
+
+            // 2. If no HTML title, use main file name (without extension)
+            if (suggestedName === 'project') {
+                const mainFiles = ['main.py', 'main.c', 'main.cpp', 'app.js', 'script.js'];
+                for (const file of mainFiles) {
+                    if (this.projectFiles[file]) {
+                        suggestedName = file.replace(/\.[^.]+$/, ''); // Remove extension
+                        break;
+                    }
+                }
+            }
+
+            // 3. If still default, use first file name
+            if (suggestedName === 'project') {
+                const firstFile = Object.keys(this.projectFiles)[0];
+                if (firstFile) {
+                    suggestedName = firstFile.replace(/\.[^.]+$/, '').replace(/\//g, '-');
+                }
+            }
+
+            this.elements.projectNameInput.value = suggestedName;
+            this.toggleModal('download', true);
+            setTimeout(() => this.elements.projectNameInput.select(), 100);
+        },
         async downloadZip() { const projectName = this.elements.projectNameInput.value.trim() || 'project'; const fileName = projectName.endsWith('.zip') ? projectName : `${projectName}.zip`; this.toggleModal('download', false); if (Object.keys(this.projectFiles).length === 0) return; const zip = new JSZip(); for (const [filename, content] of Object.entries(this.projectFiles)) zip.file(filename, content); const blob = await zip.generateAsync({ type: "blob" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); this.showToast(`${fileName} downloaded!`, 'success'); },
         toggleFullscreen() { if (!document.fullscreenElement) this.elements.previewContainer.requestFullscreen(); else document.exitFullscreen(); },
         toggleModal(type, show) { const modal = type === 'help' ? this.elements.helpModal : this.elements.downloadModal; modal.style.display = show ? 'flex' : 'none'; },
@@ -443,6 +630,72 @@
         loadNextExample() { this.saveToUndoStack(); const examples = ['examplePy', 'exampleC', 'exampleWeb']; const types = ['Python', 'C', 'Web']; this.exampleIndex = (this.exampleIndex + 1) % examples.length; const elId = examples[this.exampleIndex]; this.elements.projectInput.value = document.getElementById(elId).value; this.parseProject(); this.showToast(`${types[this.exampleIndex]} example!`, 'success'); },
         pasteFromClipboard() { navigator.clipboard.readText().then(text => { if (text) { this.elements.projectInput.value = text; this.parseProject(); this.showToast('Pasted!', 'success'); } }).catch(() => this.showToast('Clipboard error', 'error')); },
         showToast(message, type = 'success', duration = 3500) { const existing = document.querySelector('.toast'); if (existing) existing.remove(); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerHTML = `<span>${message}</span>`; document.body.appendChild(toast); setTimeout(() => toast.remove(), duration); },
+
+        async handleDroppedFiles(files) {
+            const file = files[0]; // Take first file only
+
+            if (file.name.endsWith('.zip')) {
+                // Handle ZIP file
+                try {
+                    this.showToast('Extracting ZIP...', 'info', 2000);
+                    const zip = new JSZip();
+                    const content = await zip.loadAsync(file);
+
+                    let codeContent = '';
+                    const filePromises = [];
+
+                    // Get all files from ZIP
+                    content.forEach((relativePath, zipEntry) => {
+                        if (!zipEntry.dir) {
+                            filePromises.push(
+                                zipEntry.async('text').then(text => {
+                                    return { path: relativePath, content: text };
+                                })
+                            );
+                        }
+                    });
+
+                    const extractedFiles = await Promise.all(filePromises);
+
+                    // Convert to our format
+                    extractedFiles.forEach(({ path, content }) => {
+                        codeContent += `//--- ${path} ---\n${content}\n\n`;
+                    });
+
+                    this.saveToUndoStack();
+                    this.elements.projectInput.value = codeContent.trim();
+                    this.parseProject();
+                    this.showToast(`ZIP extracted: ${extractedFiles.length} files!`, 'success');
+
+                } catch (error) {
+                    this.showToast('ZIP extraction failed!', 'error');
+                    console.error('ZIP Error:', error);
+                }
+
+            } else if (file.name.match(/\.(txt|html|css|js|py|c|cpp|h|hpp|java|json|md)$/i)) {
+                // Handle text/code files
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const content = e.target.result;
+                        this.saveToUndoStack();
+                        this.elements.projectInput.value = content;
+                        this.parseProject();
+                        this.showToast(`File loaded: ${file.name}`, 'success');
+                    };
+                    reader.onerror = () => {
+                        this.showToast('File read error!', 'error');
+                    };
+                    reader.readAsText(file);
+                } catch (error) {
+                    this.showToast('File load failed!', 'error');
+                    console.error('File Error:', error);
+                }
+            } else {
+                this.showToast('Unsupported file type!', 'warning');
+            }
+        },
+
         initSplitterDrag(e) { e.preventDefault(); const iframe = this.elements.webFrame; if (iframe) iframe.style.pointerEvents = 'none'; const onMouseMove = (moveEvent) => { const newLeftWidth = Math.max(300, Math.min(moveEvent.clientX, document.body.clientWidth - 300)); this.elements.appContainer.style.gridTemplateColumns = `${newLeftWidth}px 2px 1fr`; }; const onMouseUp = () => { if (iframe) iframe.style.pointerEvents = 'auto'; document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }; document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp); }
     };
     App.init();
