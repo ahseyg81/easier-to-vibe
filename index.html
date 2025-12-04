@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live-v3.6</title>
+    <title>Live-v3.7.0</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="interactive-tree.css">
 </head>
 
 <body>
@@ -21,7 +22,14 @@
         <div class="left-panel">
             <div class="header">
                 <h1>Live Editor <span class="badge"
-                        style="background:var(--accent-color); color:#fff; border:none;">v3.5.5</span></h1>
+                        style="background:var(--accent-color); color:#fff; border:none;">v3.7.0</span></h1>
+                <!-- 
+                    VERSIONING POLICY FOR AI ASSISTANTS:
+                    - Major (x.0.0): Complete rewrite, new framework, or breaking UI changes.
+                    - Minor (3.x.0): New features (e.g., new language support, new tool), significant logic changes (e.g., regex update).
+                    - Patch (3.6.x): Bug fixes, typo corrections, small CSS tweaks.
+                    Please update this version number in index.html when making changes according to these rules.
+                -->
                 <p>Run Web, Python or C code.</p>
             </div>
             <div class="section">
@@ -133,7 +141,7 @@
                     <div id="terminalView" class="terminal-view">
                         <div class="terminal-info">Terminal Ready. Press "Run" to execute code.</div>
                     </div>
-                    <div class="stdin-wrapper" id="stdinWrapper">
+                    <div class="stdin-wrapper collapsed" id="stdinWrapper">
                         <div class="stdin-resizer" id="stdinResizer" title="Resize"></div>
                         <div class="stdin-header" id="stdinHeader" title="Open/Close Panel">
                             <div class="stdin-title">
@@ -159,8 +167,8 @@
 
                 <div id="emptyView" class="preview-empty" style="display:none;">
                     <div class="preview-empty-content">
-                        <h3>No Preview</h3>
-                        <p>index.html or executable code required.</p>
+                        <h3>Nothing to preview</h3>
+                        <p>Run your code to see the output here</p>
                     </div>
                 </div>
             </div>
@@ -174,32 +182,55 @@
             </div>
             <div class="modal-body">
                 <div id="ai-command-wrapper">
-                    <pre><code>ROLE: You are a multi-file code assistant. Separate each file with the following format.
+                    <pre><code>You are a code generator for Live Editor. Output ALL files in a SINGLE code block.
 
 FORMAT:
-EVERYTHING IN ONE CODE BLOCK INCLUDING COMMENT LINES
-//--- filename.extension ---
-code content
+//--- filename.ext ---
+file content here
 
-//--- folder/subfile.py ---
-file in subfolder
+//--- folder/file.ext ---
+files in subfolders use forward slash
 
-//--- src/components/Header.jsx ---
-nested folder example
+EXAMPLE (Web Project):
+//--- index.html ---
+<!DOCTYPE html>
+<html>
+<head><title>My App</title></head>
+<body><h1>Hello</h1></body>
+</html>
+
+//--- style.css ---
+body { background: #000; }
+
+EXAMPLE (Python):
+//--- main.py ---
+name = input("Your name: ")
+print(f"Hello {name}!")
 
 RULES:
-- Header: Start with //--- and end with ---
-- Subfolder: Separate with slash (/) (example: assets/style.css)
-- Don't leave space between files
-- Paste code directly, don't add explanations
+- Each file starts with //--- filename ---
+- Everything in ONE code block
+- No explanations between files
 
-C/C++ INPUT SYSTEM:
-- Use magic comments for input boxes when using scanf
-- Format: // input("Label")
-- Add as comment BEFORE scanf/cin line
-- Example:
-  // input("Your Name:")
-  scanf("%s", name);</code></pre>
+---
+OPTIONAL: Smart Input Labels (C/C++ only)
+
+For C/C++ projects, add a comment before scanf/cin
+to create labeled input fields:
+
+//--- main.c ---
+#include <stdio.h>
+int main() {
+    int age;
+    // input("Enter your age:")
+    scanf("%d", &age);
+    printf("You are %d years old", age);
+    return 0;
+}
+
+This comment creates an input box.
+Python input() labels are detected automatically.
+---</code></pre>
                 </div>
             </div>
             <div class="modal-footer"><button id="copyCodeBtn" class="btn btn-primary">Copy</button></div>
@@ -225,41 +256,103 @@ C/C++ INPUT SYSTEM:
 
     <textarea id="examplePy" style="display: none;">
 //--- main.py ---
-import time
+print("=" * 40)
+print("   Welcome to Python Demo!")
+print("=" * 40)
 
-print("System Starting...")
-# INPUT TEST: Automatic input boxes should appear below
-name = input("Your Name:")
-age = int(input("Your Age:"))
+name = input("Your name: ")
+age = int(input("Your age: "))
 
 print(f"\nHello {name}!")
-print(f"So you are {age} years old.")
+print(f"You are {age} years old.")
 
-if age > 18:
-    print("Adult access approved.")
+if age >= 18:
+    print("Adult access granted.")
 else:
-    print("Young user access approved.")
-    
-print("Process complete.")
+    print("Minor access - some features limited.")
+
+print("\n--- Program finished ---")
 </textarea>
 
     <textarea id="exampleC" style="display: none;">
 //--- main.c ---
 #include <stdio.h>
+
 int main() {
-    int number;
-    // input("Enter Number:")
-    printf("Enter a number: ");
-    scanf("%d", &number);
-    printf("Square of your number: %d", number * number);
+    int a, b;
+    
+    printf("=== C Calculator ===\n");
+    
+    // input("First number:")
+    scanf("%d", &a);
+    
+    // input("Second number:")
+    scanf("%d", &b);
+    
+    printf("\nResults:\n");
+    printf("Sum: %d\n", a + b);
+    printf("Difference: %d\n", a - b);
+    printf("Product: %d\n", a * b);
+    
     return 0;
 }
 </textarea>
 
     <textarea id="exampleWeb" style="display: none;">
 //--- index.html ---
-<h1>Web Test</h1>
-<button onclick="alert('Working!')">Click</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Demo</title>
+</head>
+<body>
+    <h1>Live Editor Demo</h1>
+    <p>This is a multi-file web project!</p>
+    <button id="btn">Click Me</button>
+    <div id="output"></div>
+</body>
+</html>
+
+//--- style.css ---
+body {
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+h1 { font-size: 2.5rem; margin-bottom: 10px; }
+
+button {
+    background: #58a6ff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+button:hover { transform: scale(1.05); }
+
+#output {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #58a6ff;
+}
+
+//--- script.js ---
+let count = 0;
+document.getElementById('btn').addEventListener('click', () => {
+    count++;
+    document.getElementById('output').textContent = `Clicked ${count} times!`;
+});
 </textarea>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
