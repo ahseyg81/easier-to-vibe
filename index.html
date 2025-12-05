@@ -21,34 +21,37 @@
 
         <div class="left-panel">
             <div class="header">
-                <h1>Live Editor <span class="badge"
-                        style="background:var(--accent-color); color:#fff; border:none;">v3.7.0</span></h1>
-                <!-- 
-                    VERSIONING POLICY FOR AI ASSISTANTS:
-                    - Major (x.0.0): Complete rewrite, new framework, or breaking UI changes.
-                    - Minor (3.x.0): New features (e.g., new language support, new tool), significant logic changes (e.g., regex update).
-                    - Patch (3.6.x): Bug fixes, typo corrections, small CSS tweaks.
-                    Please update this version number in index.html when making changes according to these rules.
-                -->
-                <p>Run Web, Python or C code.</p>
-            </div>
-            <div class="section">
-                <div class="section-title">
-                    1. Paste Project Code
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h1>Live Editor <span class="badge"
+                                style="background:var(--accent-color); color:#fff; border:none;">v3.8.0</span></h1>
+                        <p>Run Web, Python or C code.</p>
+                    </div>
                     <div class="title-actions">
+                        <button class="header-run-btn" id="parseBtn">Run</button>
                         <button id="ornekYukleBtn" class="action-btn" title="Switch Example (Web > Py > C)">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <polygon
-                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                </polygon>
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+                                <path d="M5 3v4" />
+                                <path d="M3 5h4" />
+                                <path d="M19 17v4" />
+                                <path d="M17 19h4" />
                             </svg>
                         </button>
                         <button id="undoBtn" class="undo-btn" title="Undo (Ctrl+Z)" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M10 15v5l-4-4 4-4v5h8a1 1 0 0 0 0-2h-8" />
-                                <path d="M4 5h8a1 1 0 0 1 0 2H4v5l-4-4 4-4v5z" />
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                        </button>
+                        <button id="redoBtn" class="undo-btn" title="Redo (Ctrl+Shift+Z)" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                             </svg>
                         </button>
                         <button id="temizleBtn" class="action-btn" title="Clear" disabled>
@@ -78,19 +81,43 @@
                         </button>
                     </div>
                 </div>
+                <!-- 
+                    VERSION POLICY (Semantic Versioning):
+                    ─────────────────────────────────────
+                    Major (x.0.0): Complete rewrite, new framework, breaking changes
+                    Minor (3.x.0): New features, new panels, significant UI changes
+                                   Examples: new language support, collapsible panels, new tools
+                    Patch (3.8.x): Bug fixes, small tweaks, spacing adjustments
+                                   Examples: CSS fixes, typo corrections, minor layout tweaks
+                    
+                    Current: v3.8.0
+                    Don't bump version for single-line changes.
+                    
+                    UPDATE LOCATIONS:
+                    1. <title> tag (tab title)
+                    2. Header badge (next to "Live Editor")
+                    3. This comment (Current: vX.X.X)
+                -->
+            </div>
+            <div class="section">
                 <textarea class="code-input" id="projectInput"
                     placeholder="Paste in //--- main.py --- or //--- index.html --- format..."></textarea>
-                <div
-                    style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11px; color:var(--text-secondary);">
+                <div style="margin-top:4px; font-size:11px; color:var(--text-secondary);">
                     <span id="editorStats">0 lines • 0 characters</span>
-                    <span id="formatHint" style="opacity:0.6;">Ctrl+Enter to parse</span>
                 </div>
-                <button class="btn btn-primary" id="parseBtn">Parse Project</button>
             </div>
-            <div class="section file-list-section">
-                <div class="section-title">
-                    Files
-                    <span id="fileBadge" class="badge" style="display:none;">0</span>
+            <div class="code-resizer" id="codeResizer"></div>
+            <!-- FILES COLLAPSIBLE - START (Kaldırılabilir) -->
+            <div class="files-wrapper" id="filesWrapper">
+                <div class="files-header" id="filesHeader">
+                    <div class="files-title">
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        Files
+                        <span id="fileBadge" class="badge" style="display:none;">0</span>
+                    </div>
                     <div id="statsBar" class="stats-bar" style="display:none;">
                         <div class="stat">
                             <div class="stat-value" id="fileCount">0</div>
@@ -102,16 +129,27 @@
                         </div>
                     </div>
                 </div>
-                <div id="fileListContainer">
+                <div class="files-content" id="fileListContainer">
                     <div class="empty-state">
                         <p><strong>No files yet</strong></p>
                         <p>Paste your project code and parse it.</p>
                     </div>
                 </div>
             </div>
-            <div class="section">
-                <div class="section-title">2. Export</div>
-                <button class="btn btn-secondary" id="downloadBtn" disabled>Download Project as .zip</button>
+            <!-- FILES COLLAPSIBLE - END -->
+            <div class="export-wrapper collapsed" id="exportWrapper">
+                <div class="export-header" id="exportHeader">
+                    <div class="export-title">
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        Export
+                    </div>
+                </div>
+                <div class="export-content">
+                    <button class="btn btn-secondary" id="downloadBtn" disabled>Download Project as .zip</button>
+                </div>
             </div>
         </div>
         <div class="splitter" id="splitter"></div>
