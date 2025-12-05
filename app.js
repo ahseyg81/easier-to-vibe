@@ -83,16 +83,18 @@
         escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); },
 
         init() { this.cacheElements(); this.addEventListeners(); this.updateEditorStats(); },
+
         cacheElements() {
             const ids = ['projectInput', 'parseBtn', 'downloadBtn', 'refreshBtn', 'fullscreenBtn',
                 'pasteBtn', 'helpBtn', 'helpModal', 'closeHelpModalBtn', 'copyCodeBtn',
                 'statsBar', 'fileCount', 'totalSize', 'fileBadge', 'fileListContainer',
                 'previewContainer', 'appContainer', 'splitter', 'temizleBtn',
-                'ornekYukleBtn', 'undoBtn', 'downloadModal', 'closeDownloadModalBtn',
+                'ornekYukleBtn', 'undoBtn', 'redoBtn', 'downloadModal', 'closeDownloadModalBtn',
                 'projectNameInput', 'confirmDownloadBtn', 'cancelDownloadBtn', 'editorStats',
                 'dropOverlay', 'webFrame', 'terminalContainer', 'terminalView', 'runCodeBtn',
                 'tabWeb', 'tabTerminal', 'emptyView', 'manualToggle', 'dynamicInputs', 'rawStdin',
-                'stdinWrapper', 'stdinHeader', 'stdinResizer'];
+                'stdinWrapper', 'stdinHeader', 'stdinResizer', 'exportWrapper', 'exportHeader',
+                'codeResizer', 'fileListSection', 'filesWrapper', 'filesHeader'];
 
             ids.forEach(id => this.elements[id] = document.getElementById(id));
         },
@@ -109,6 +111,7 @@
             this.elements.temizleBtn.addEventListener('click', () => this.clearEditor());
             this.elements.ornekYukleBtn.addEventListener('click', () => this.loadNextExample());
             this.elements.undoBtn.addEventListener('click', () => this.undo());
+            this.elements.redoBtn.addEventListener('click', () => this.redo());
             this.elements.closeDownloadModalBtn.addEventListener('click', () => this.toggleModal('download', false));
             this.elements.cancelDownloadBtn.addEventListener('click', () => this.toggleModal('download', false));
             this.elements.confirmDownloadBtn.addEventListener('click', () => this.downloadZip());
@@ -119,7 +122,7 @@
                 if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart; e.target.value = e.target.value.substring(0, e.target.selectionStart) + "    " + e.target.value.substring(e.target.selectionEnd); e.target.selectionStart = e.target.selectionEnd = s + 4; }
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); this.parseProject(); }
             });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.toggleModal('help', false); this.toggleModal('download', false); } if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); } });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this.toggleModal('help', false); this.toggleModal('download', false); } if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); this.undo(); } if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); this.redo(); } if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); this.redo(); } });
             this.elements.runCodeBtn.addEventListener('click', () => this.runCode());
             this.elements.tabWeb.addEventListener('click', () => this.switchTab('web'));
             this.elements.tabTerminal.addEventListener('click', () => this.switchTab('terminal'));
@@ -161,6 +164,44 @@
 
                 const onMouseUp = () => {
                     this.elements.stdinWrapper.classList.remove('dragging');
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            // Export panel toggle
+            this.elements.exportHeader.addEventListener('click', () => {
+                this.elements.exportWrapper.classList.toggle('collapsed');
+            });
+
+            // FILES COLLAPSIBLE - START (Kaldırılabilir)
+            this.elements.filesHeader.addEventListener('click', () => {
+                this.elements.filesWrapper.classList.toggle('collapsed');
+                // Hide resizer when FILES is collapsed
+                const isCollapsed = this.elements.filesWrapper.classList.contains('collapsed');
+                this.elements.codeResizer.style.display = isCollapsed ? 'none' : 'block';
+            });
+            // FILES COLLAPSIBLE - END
+
+            // Code section resizer
+            this.elements.codeResizer.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                const codeSection = this.elements.projectInput.parentElement;
+                const startY = e.clientY;
+                const startHeight = codeSection.offsetHeight;
+
+                const onMouseMove = (ev) => {
+                    const newHeight = startHeight + (ev.clientY - startY);
+                    if (newHeight > 100 && newHeight < window.innerHeight * 0.7) {
+                        codeSection.style.flex = 'none';
+                        codeSection.style.height = `${newHeight}px`;
+                    }
+                };
+
+                const onMouseUp = () => {
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
                 };
@@ -308,15 +349,20 @@
         },
 
         undoStack: [],
+        redoStack: [],
         maxUndoSteps: 10,
         saveToUndoStack() {
             this.undoStack.push({ files: JSON.parse(JSON.stringify(this.projectFiles)), input: this.elements.projectInput.value });
             if (this.undoStack.length > this.maxUndoSteps) this.undoStack.shift();
+            this.redoStack = []; // Clear redo on new action
             this.elements.undoBtn.disabled = false;
+            this.elements.redoBtn.disabled = true;
         },
 
         undo() {
             if (this.undoStack.length === 0) return;
+            // Save current state to redo stack
+            this.redoStack.push({ files: JSON.parse(JSON.stringify(this.projectFiles)), input: this.elements.projectInput.value });
             const state = this.undoStack.pop();
             this.projectFiles = state.files;
             this.elements.projectInput.value = state.input;
@@ -338,7 +384,35 @@
             }
 
             this.elements.undoBtn.disabled = this.undoStack.length === 0;
+            this.elements.redoBtn.disabled = this.redoStack.length === 0;
             this.showToast('Undone!', 'info');
+        },
+
+        redo() {
+            if (this.redoStack.length === 0) return;
+            // Save current state to undo stack
+            this.undoStack.push({ files: JSON.parse(JSON.stringify(this.projectFiles)), input: this.elements.projectInput.value });
+            const state = this.redoStack.pop();
+            this.projectFiles = state.files;
+            this.elements.projectInput.value = state.input;
+
+            if (Object.keys(this.projectFiles).length > 0) {
+                this.updateUI();
+                this.updatePreview();
+            } else {
+                this.updateUI();
+                this.switchTab('web');
+                this.elements.webFrame.srcdoc = '';
+                this.elements.webFrame.classList.remove('active');
+                this.elements.terminalContainer.classList.remove('active');
+                this.elements.emptyView.style.display = 'flex';
+                this.elements.refreshBtn.disabled = true;
+                this.elements.runCodeBtn.style.display = 'none';
+            }
+
+            this.elements.undoBtn.disabled = this.undoStack.length === 0;
+            this.elements.redoBtn.disabled = this.redoStack.length === 0;
+            this.showToast('Redone!', 'info');
         },
 
         parseProject() {
@@ -398,7 +472,7 @@
             } else this.elements.fileListContainer.innerHTML = `<div class="empty-state"><p><strong>No files</strong></p></div>`;
         },
 
-        updateEditorStats() { const text = this.elements.projectInput.value; this.elements.editorStats.textContent = `${text.split('\n').length} lines • ${text.length} chars`; this.elements.temizleBtn.disabled = text.length === 0; this.elements.undoBtn.disabled = this.undoStack.length === 0; },
+        updateEditorStats() { const text = this.elements.projectInput.value; this.elements.editorStats.textContent = `${text.split('\n').length} lines • ${text.length} chars`; this.elements.temizleBtn.disabled = text.length === 0; this.elements.undoBtn.disabled = this.undoStack.length === 0; this.elements.redoBtn.disabled = this.redoStack.length === 0; },
 
         scrollToFile(filePath) {
             const textarea = this.elements.projectInput;
