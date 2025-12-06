@@ -326,6 +326,18 @@ body {
     background: var(--border-hover);
 }
 
+.icon-btn.icon-only {
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+}
+
+.icon-btn.icon-only svg {
+    width: 16px;
+    height: 16px;
+}
+
 .run-btn {
     background: #166534;
     border-color: #14532d;
@@ -567,6 +579,36 @@ body {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.sort-toggle {
+    display: none;
+    align-items: center;
+    gap: 1px;
+    padding: 2px 5px;
+    margin-left: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.6;
+}
+
+.sort-toggle svg {
+    width: 14px;
+    height: 14px;
+}
+
+.sort-toggle:hover {
+    opacity: 1;
+    color: var(--accent-color);
+}
+
+.files-wrapper:not(.collapsed) .sort-toggle {
+    display: inline-flex;
 }
 
 .files-content {
@@ -820,6 +862,7 @@ body {
 
 .action-btn,
 .help-btn,
+.help-circle,
 .paste-btn,
 .undo-btn {
     background: var(--border-color);
@@ -836,8 +879,18 @@ body {
     border-radius: 6px;
 }
 
+.help-circle {
+    border-radius: 50%;
+}
+
+.help-circle svg {
+    width: 16px;
+    height: 16px;
+}
+
 .action-btn:hover,
 .help-btn:hover,
+.help-circle:hover,
 .paste-btn:hover,
 .undo-btn:hover:not(:disabled) {
     background: var(--border-hover);
