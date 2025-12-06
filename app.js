@@ -7,6 +7,7 @@
         elements: {},
         exampleIndex: 0,
         inputValues: [],
+        sortMode: 'alpha', // 'alpha' or 'original'
 
         async runCode() {
             this.switchTab('terminal');
@@ -94,7 +95,7 @@
                 'dropOverlay', 'webFrame', 'terminalContainer', 'terminalView', 'runCodeBtn',
                 'tabWeb', 'tabTerminal', 'emptyView', 'manualToggle', 'dynamicInputs', 'rawStdin',
                 'stdinWrapper', 'stdinHeader', 'stdinResizer', 'exportWrapper', 'exportHeader',
-                'codeResizer', 'fileListSection', 'filesWrapper', 'filesHeader'];
+                'codeResizer', 'fileListSection', 'filesWrapper', 'filesHeader', 'sortToggle', 'sortLabel'];
 
             ids.forEach(id => this.elements[id] = document.getElementById(id));
         },
@@ -127,6 +128,14 @@
             this.elements.tabWeb.addEventListener('click', () => this.switchTab('web'));
             this.elements.tabTerminal.addEventListener('click', () => this.switchTab('terminal'));
             this.elements.splitter.addEventListener('mousedown', (e) => this.initSplitterDrag(e));
+
+            // Sort toggle for file tree
+            this.elements.sortToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.sortMode = this.sortMode === 'alpha' ? 'original' : 'alpha';
+                this.elements.sortLabel.textContent = this.sortMode === 'alpha' ? 'abc' : '123';
+                this.updateUI();
+            });
 
             this.elements.manualToggle.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent header click
@@ -230,10 +239,10 @@
 
             document.body.addEventListener('drop', async (e) => {
                 this.elements.dropOverlay.classList.remove('visible');
-                const files = e.dataTransfer.files;
+                const items = e.dataTransfer.items;
 
-                if (files.length > 0) {
-                    await this.handleDroppedFiles(files);
+                if (items && items.length > 0) {
+                    await this.handleDroppedItems(items);
                 }
             });
         },
@@ -483,6 +492,13 @@
             if (match) {
                 const index = text.indexOf(match[0]);
 
+                // Special case: if file is at the very beginning, just scroll to top
+                if (index === 0 || text.substring(0, index).trim() === '') {
+                    textarea.scrollTop = 0;
+                    this.showToast(`Navigated to ${filePath}`, 'info');
+                    return;
+                }
+
                 // Create a mirror div to calculate exact pixel offset
                 const div = document.createElement('div');
                 const style = getComputedStyle(textarea);
@@ -534,12 +550,17 @@
         buildFileTree() { const tree = {}; Object.keys(this.projectFiles).forEach(path => { const parts = path.split('/').filter(Boolean); let currentLevel = tree; parts.forEach((part, index) => { if (index === parts.length - 1) currentLevel[part] = { __isFile: true, size: new Blob([this.projectFiles[path]]).size, fullPath: path }; else { if (!currentLevel[part]) currentLevel[part] = { __isFolder: true, children: {} }; currentLevel = currentLevel[part].children; } }); }); return tree; },
         renderFileTree(node) {
             if (!node || Object.keys(node).length === 0) return '';
-            const sortedKeys = Object.keys(node).sort((a, b) => {
-                const aIsFolder = node[a].__isFolder, bIsFolder = node[b].__isFolder;
-                if (aIsFolder && !bIsFolder) return -1;
-                if (!aIsFolder && bIsFolder) return 1;
-                return a.localeCompare(b);
-            });
+            let sortedKeys = Object.keys(node);
+
+            if (this.sortMode === 'alpha') {
+                sortedKeys.sort((a, b) => {
+                    const aIsFolder = node[a].__isFolder, bIsFolder = node[b].__isFolder;
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                    return a.localeCompare(b);
+                });
+            }
+            // 'original' mode: keep original order (no sorting)
             let html = '<ul>';
             sortedKeys.forEach(key => {
                 const item = node[key];
@@ -588,8 +609,14 @@
                 let inlineCss = cssFiles.map(cssFile => this.projectFiles[cssFile]).join('\n');
                 const jsFiles = Object.keys(this.projectFiles).filter(f => f.endsWith('.js'));
                 let inlineJs = jsFiles.map(jsFile => this.projectFiles[jsFile]).join('\n');
-                htmlContent = htmlContent.replace(/<link[^>]*rel=["']stylesheet["'][^>]*>/gi, '');
-                htmlContent = htmlContent.replace(/<script[^>]*src=["'][^"']*["'][^>]*><\/script>/gi, '');
+
+                // Remove only LOCAL stylesheet links (not CDN)
+                htmlContent = htmlContent.replace(/<link[^>]*rel=["']stylesheet["'][^>]*href=["'](?!https?:\/\/)[^"']*["'][^>]*>/gi, '');
+                htmlContent = htmlContent.replace(/<link[^>]*href=["'](?!https?:\/\/)[^"']*["'][^>]*rel=["']stylesheet["'][^>]*>/gi, '');
+
+                // Remove only LOCAL script tags (not CDN) - keep external scripts like Three.js
+                htmlContent = htmlContent.replace(/<script[^>]*src=["'](?!https?:\/\/)[^"']*["'][^>]*><\/script>/gi, '');
+
                 if (inlineCss) { if (htmlContent.includes('</head>')) htmlContent = htmlContent.replace('</head>', '<style>' + inlineCss + '</style></head>'); else htmlContent = '<style>' + inlineCss + '</style>' + htmlContent; }
                 if (inlineJs) { if (htmlContent.includes('</body>')) htmlContent = htmlContent.replace('</body>', '<script>' + inlineJs + '<\/script></body>'); else htmlContent += '<script>' + inlineJs + '<\/script>'; }
                 this.elements.webFrame.srcdoc = htmlContent;
@@ -705,6 +732,117 @@
         pasteFromClipboard() { navigator.clipboard.readText().then(text => { if (text) { this.elements.projectInput.value = text; this.parseProject(); this.showToast('Pasted!', 'success'); } }).catch(() => this.showToast('Clipboard error', 'error')); },
         showToast(message, type = 'success', duration = 3500) { const existing = document.querySelector('.toast'); if (existing) existing.remove(); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerHTML = `<span>${message}</span>`; document.body.appendChild(toast); setTimeout(() => toast.remove(), duration); },
 
+        // Helper: Read all entries from a directory recursively
+        async readDirectoryEntries(dirEntry, basePath = '') {
+            const entries = [];
+            const reader = dirEntry.createReader();
+
+            const readEntries = () => new Promise((resolve, reject) => {
+                reader.readEntries(resolve, reject);
+            });
+
+            let batch;
+            do {
+                batch = await readEntries();
+                for (const entry of batch) {
+                    const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+                    if (entry.isFile) {
+                        entries.push({ entry, path: entryPath });
+                    } else if (entry.isDirectory) {
+                        const subEntries = await this.readDirectoryEntries(entry, entryPath);
+                        entries.push(...subEntries);
+                    }
+                }
+            } while (batch.length > 0);
+
+            return entries;
+        },
+
+        // Helper: Read file content from FileEntry
+        readFileEntry(fileEntry) {
+            return new Promise((resolve, reject) => {
+                fileEntry.file(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                }, reject);
+            });
+        },
+
+        async handleDroppedItems(items) {
+            const firstItem = items[0];
+
+            // Check if it's a directory (folder)
+            if (firstItem.webkitGetAsEntry) {
+                const entry = firstItem.webkitGetAsEntry();
+
+                if (entry && entry.isDirectory) {
+                    // Handle folder drop
+                    try {
+                        this.showToast('Reading folder...', 'info', 2000);
+                        const fileEntries = await this.readDirectoryEntries(entry);
+
+                        // Filter supported file types
+                        const supportedExt = /\.(txt|html|css|js|py|c|cpp|h|hpp|java|json|md|xml|svg)$/i;
+                        const validEntries = fileEntries.filter(fe => supportedExt.test(fe.path));
+
+                        if (validEntries.length === 0) {
+                            this.showToast('No supported files in folder!', 'warning');
+                            return;
+                        }
+
+                        // Read all file contents
+                        const fileContents = await Promise.all(
+                            validEntries.map(async (fe) => ({
+                                path: fe.path,
+                                content: await this.readFileEntry(fe.entry)
+                            }))
+                        );
+
+                        // Sort files: index.html first, then html, css, js, others
+                        fileContents.sort((a, b) => {
+                            const order = (path) => {
+                                const name = path.split('/').pop();
+                                if (name === 'index.html') return 0;
+                                if (path.endsWith('.html')) return 1;
+                                if (path.endsWith('.css')) return 2;
+                                if (path.endsWith('.js')) return 3;
+                                return 4;
+                            };
+                            return order(a.path) - order(b.path);
+                        });
+
+                        // Convert to our format
+                        let codeContent = '';
+                        fileContents.forEach(({ path, content }) => {
+                            codeContent += `//--- ${path} ---\n${content}\n\n`;
+                        });
+
+                        this.saveToUndoStack();
+                        this.elements.projectInput.value = codeContent.trim();
+                        this.parseProject();
+                        this.showToast(`Folder loaded: ${fileContents.length} files!`, 'success');
+                        return;
+                    } catch (error) {
+                        this.showToast('Folder read failed!', 'error');
+                        console.error('Folder Error:', error);
+                        return;
+                    }
+                }
+            }
+
+            // Fall back to file handling
+            const files = [];
+            for (let i = 0; i < items.length; i++) {
+                const file = items[i].getAsFile();
+                if (file) files.push(file);
+            }
+            if (files.length > 0) {
+                await this.handleDroppedFiles(files);
+            }
+        },
+
         async handleDroppedFiles(files) {
             const file = files[0]; // Take first file only
 
@@ -731,6 +869,18 @@
 
                     const extractedFiles = await Promise.all(filePromises);
 
+                    // Sort files: index.html first, then html, css, js, others
+                    extractedFiles.sort((a, b) => {
+                        const order = (path) => {
+                            if (path === 'index.html') return 0;
+                            if (path.endsWith('.html')) return 1;
+                            if (path.endsWith('.css')) return 2;
+                            if (path.endsWith('.js')) return 3;
+                            return 4;
+                        };
+                        return order(a.path) - order(b.path);
+                    });
+
                     // Convert to our format
                     extractedFiles.forEach(({ path, content }) => {
                         codeContent += `//--- ${path} ---\n${content}\n\n`;
@@ -747,13 +897,14 @@
                 }
 
             } else if (file.name.match(/\.(txt|html|css|js|py|c|cpp|h|hpp|java|json|md)$/i)) {
-                // Handle text/code files
+                // Handle text/code files - add header with filename
                 try {
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const content = e.target.result;
+                        const codeWithHeader = `//--- ${file.name} ---\n${content}`;
                         this.saveToUndoStack();
-                        this.elements.projectInput.value = content;
+                        this.elements.projectInput.value = codeWithHeader;
                         this.parseProject();
                         this.showToast(`File loaded: ${file.name}`, 'success');
                     };
